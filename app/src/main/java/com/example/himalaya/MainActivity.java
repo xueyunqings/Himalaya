@@ -1,42 +1,71 @@
 package com.example.himalaya;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.FragmentActivity;
+import androidx.fragment.app.FragmentManager;
+import androidx.viewpager.widget.ViewPager;
 
 import android.os.Bundle;
 import android.util.Log;
 
-import com.ximalaya.ting.android.opensdk.datatrasfer.CommonRequest;
-import com.ximalaya.ting.android.opensdk.datatrasfer.IDataCallBack;
-import com.ximalaya.ting.android.opensdk.model.category.Category;
-import com.ximalaya.ting.android.opensdk.model.category.CategoryList;
+import com.example.himalaya.adapters.IndicatorAdapter;
+import com.example.himalaya.adapters.MainContentAdapter;
+
+import net.lucode.hackware.magicindicator.MagicIndicator;
+import net.lucode.hackware.magicindicator.ViewPagerHelper;
+import net.lucode.hackware.magicindicator.buildins.commonnavigator.CommonNavigator;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends FragmentActivity {
 
     private final String TAG = "MainActivity";
+    private MagicIndicator magicIndicator;
+    private ViewPager mContentPager;
+    private IndicatorAdapter mIndicatorAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initView();
+        initEvent();
+    }
 
-        Map<String, String> map = new HashMap<>();
-        CommonRequest.getCategories(map, new IDataCallBack<CategoryList>() {
+    private void initEvent(){
+        mIndicatorAdapter.setOnIndicatorTapClickListener(new IndicatorAdapter.OnIndicatorTapClickListener() {
             @Override
-            public void onSuccess(CategoryList categoryList) {
-                List<Category> category= categoryList.getCategories();
-                for (Category c: category){
-                    Log.d(TAG,"------->"+c.getCategoryName());
+            public void onTabClick(int index) {
+                if(mContentPager != null){
+                    mContentPager.setCurrentItem(index);
                 }
             }
-
-            @Override
-            public void onError(int i, String s) {
-                Log.d(TAG,"------->");
-            }
-    });
+        });
     }
+
+    private void initView(){
+        magicIndicator = this.findViewById(R.id.main_indicator);
+        magicIndicator.setBackgroundColor(this.getResources().getColor(R.color.main_color));
+        //创建适配器
+        mIndicatorAdapter = new IndicatorAdapter(this);
+        CommonNavigator commonNavigator = new CommonNavigator(this);
+        commonNavigator.setAdapter(mIndicatorAdapter);
+        commonNavigator.setAdjustMode(true);
+
+        //ViewPager
+        mContentPager = this.findViewById(R.id.content_page);
+
+        //创建适配器
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        MainContentAdapter mainContentAdapter = new MainContentAdapter(fragmentManager);
+
+        mContentPager.setAdapter(mainContentAdapter);
+        //把ViewPager和Indicator绑定
+        magicIndicator.setNavigator(commonNavigator);
+        ViewPagerHelper.bind(magicIndicator,mContentPager);
+    }
+
+
 }

@@ -23,4 +23,19 @@ public interface IRecommendViewCallback {
      * @param result
      */
     void onRefershMore(List<Album> result);
+
+    /**
+     * 网络错误
+     */
+    void onNetworkError();
+
+    /**
+     * 数据为空
+     */
+    void onEmpty();
+
+    /**
+     * 正在加载
+     */
+    void onLoadinng();
 }

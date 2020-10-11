@@ -1,5 +1,6 @@
 package com.example.himalaya.fragments;
 
+import android.content.Intent;
 import android.graphics.Rect;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -9,29 +10,56 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.example.himalaya.DetailActivity;
 import com.example.himalaya.R;
 import com.example.himalaya.adapters.RecommendListAdapter;
 import com.example.himalaya.base.BaseFragment;
 import com.example.himalaya.interfaces.IRecommendViewCallback;
+import com.example.himalaya.presenters.AlbumDetailPresenter;
 import com.example.himalaya.presenters.RecommendPresenter;
+import com.example.himalaya.views.UILoader;
 import com.ximalaya.ting.android.opensdk.model.album.Album;
 
 import net.lucode.hackware.magicindicator.buildins.UIUtil;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-public class RecommendFragment extends BaseFragment implements IRecommendViewCallback {
+public class RecommendFragment extends BaseFragment implements IRecommendViewCallback, UILoader.OnRetryClickListener, RecommendListAdapter.OnRecommendItemClickListener {
     private final String TAG = "RecommendFragment";
     private View mRootView;
     private RecyclerView recommendRV;
     private RecommendListAdapter recommendListAdapter;
     private RecommendPresenter mRecommendPresenter;
+    private UILoader uiLoader;
 
     @Override
-    protected View onSubviewLoaded(LayoutInflater layoutInflater, ViewGroup container) {
-        mRootView = layoutInflater.inflate(R.layout.fragment_recommend,container,false);
+    protected View onSubviewLoaded(final LayoutInflater layoutInflater, ViewGroup container) {
+
+        uiLoader = new UILoader(getContext()) {
+            @Override
+            protected View getSuccessView(ViewGroup container) {
+                return createSuccessView(layoutInflater,container);
+            }
+        };
+
+        //获得逻辑层对象
+        mRecommendPresenter = RecommendPresenter.getInstance();
+        //先要设置通知接口的注册
+        mRecommendPresenter.registerViewCallback(this);
+        //获取推荐列表
+        mRecommendPresenter.getRecommendList();
+
+        if (uiLoader.getParent() instanceof ViewGroup) {
+            ((ViewGroup) uiLoader.getParent()).removeView(uiLoader);
+        }
+
+        uiLoader.setOnRetryClickListener(this);
+
+        return uiLoader;
+    }
+
+    private View createSuccessView(LayoutInflater layoutInflater, ViewGroup container) {
+        mRootView = layoutInflater.inflate(R.layout.fragment_recommend, container ,false);
 
         //RecyclerViewd的使用
         //1，找到对应给的控件
@@ -53,13 +81,7 @@ public class RecommendFragment extends BaseFragment implements IRecommendViewCal
         //3，设置适配器
         recommendListAdapter = new RecommendListAdapter();
         recommendRV.setAdapter(recommendListAdapter);
-
-        //获得逻辑层对象
-        mRecommendPresenter = RecommendPresenter.getInstance();
-        //先要设置通知接口的注册
-        mRecommendPresenter.registerViewCallback(this);
-        //获取推荐列表
-        mRecommendPresenter.getRecommendList();
+        recommendListAdapter.setRecommendItemClickListener(this);
         return mRootView;
     }
 
@@ -67,16 +89,22 @@ public class RecommendFragment extends BaseFragment implements IRecommendViewCal
     public void onRecommendListLoaded(List<Album> result) {
         //数据回来，更新UI
         recommendListAdapter.setData(result);
+        uiLoader.updateStatus(UILoader.UIStatus.SUCCESS);
     }
 
     @Override
-    public void onLoadMore(List<Album> result) {
-
+    public void onNetworkError() {
+        uiLoader.updateStatus(UILoader.UIStatus.NETWORK_ERROR);
     }
 
     @Override
-    public void onRefershMore(List<Album> result) {
+    public void onEmpty() {
+        uiLoader.updateStatus(UILoader.UIStatus.EMPTY);
+    }
 
+    @Override
+    public void onLoadinng() {
+        uiLoader.updateStatus(UILoader.UIStatus.LOADING);
     }
 
     @Override
@@ -86,6 +114,32 @@ public class RecommendFragment extends BaseFragment implements IRecommendViewCal
         if(mRecommendPresenter != null){
             mRecommendPresenter.unRegisterViewCallback(this);
         }
+    }
+
+    @Override
+    public void onRetryClick() {
+        //表示网络不佳的时候，用户点击重试
+        if (mRecommendPresenter != null) {
+            mRecommendPresenter.getRecommendList();
+        }
+    }
+
+    @Override
+    public void onItemClick(int position, Album album) {
+        AlbumDetailPresenter.getInstance().setTargetAlbum(album);
+        //跳转到详情页
+        Intent intent = new Intent(getContext(), DetailActivity.class);
+        startActivity(intent);
+    }
+
+
+    @Override
+    public void onLoadMore(List<Album> result) {
+
+    }
+
+    @Override
+    public void onRefershMore(List<Album> result) {
 
     }
 }

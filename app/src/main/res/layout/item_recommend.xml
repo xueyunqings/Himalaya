@@ -54,7 +54,7 @@
                 <ImageView
                     android:layout_width="8dp"
                     android:layout_height="8dp"
-                    android:src="@mipmap/ic_play"/>
+                    android:src="@mipmap/play_count_icon"/>
                 <TextView
                     android:layout_width="45dp"
                     android:layout_height="wrap_content"

@@ -4,7 +4,7 @@ package com.example.himalaya.interfaces;
 /**
  * Created by TrillGates on 2010/10/11.
  */
-public interface IAlbumDetailPresenter {
+public interface IAlbumDetailPresenter extends IBasePresenter<IAlbumDetailViewCallback>{
 
     /**
      * 下拉刷新更多内容
@@ -24,9 +24,4 @@ public interface IAlbumDetailPresenter {
      * @param page
      */
     void getAlbumDetail(int albumId, int page);
-
-    void registerViewCallback(IAlbumDetailViewCallback callback);
-
-    void unRegisterViewCallback(IAlbumDetailViewCallback callback);
-
 }

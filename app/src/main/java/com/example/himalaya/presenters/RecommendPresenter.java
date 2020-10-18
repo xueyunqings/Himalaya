@@ -47,7 +47,7 @@ public class RecommendPresenter implements IRecommendPresenter {
         //封装参数
         Map<String, String> map = new HashMap<String, String>();
         //这个参数表示一页数据返回多少条
-        map.put(DTransferConstants.LIKE_COUNT, Constants.RECOMMAND_COUNT+"");
+        map.put(DTransferConstants.LIKE_COUNT, Constants.COUNT_RECOMMAND+"");
         CommonRequest.getGuessLikeAlbum(map, new IDataCallBack<GussLikeAlbumList>() {
             @Override
             public void onSuccess(GussLikeAlbumList gussLikeAlbumList) {

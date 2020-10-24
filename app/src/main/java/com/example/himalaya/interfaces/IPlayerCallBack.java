@@ -79,4 +79,5 @@ public interface IPlayerCallBack {
      * @param isReverse
      */
     void updateListOrder(boolean isReverse);
+
 }

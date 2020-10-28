@@ -21,7 +21,10 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
     private List<IAlbumDetailViewCallback> mCallbacks = new ArrayList<>();
 
     private static AlbumDetailPresenter sInstance = null;
+    private List<Track> mTracks = new ArrayList<>();
     private Album mTargetAlbum = null;
+    private int mCurrentAlbumId = -1;
+    private int mCurrentPage = 0;
 
     public static AlbumDetailPresenter getInstance(){
         if(sInstance == null){
@@ -41,33 +44,64 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
 
     @Override
     public void loadMore() {
-
+        //去加载更多内容
+        mCurrentPage++;
+        //传入true，表示结果会追加到列表的后方。
+        doLoaded(true);
     }
 
-    @Override
-    public void getAlbumDetail(int albumId, int page) {
+    private void doLoaded(final boolean isLoaderMore) {
         //根据页码和id获取列表
         Map<String,String> map = new HashMap<>();
-        map.put(DTransferConstants.ALBUM_ID,albumId+"");
+        map.put(DTransferConstants.ALBUM_ID,mCurrentAlbumId+"");
         map.put(DTransferConstants.SORT,"asc");
-        map.put(DTransferConstants.PAGE,page+"");
+        map.put(DTransferConstants.PAGE,mCurrentPage+"");
         map.put(DTransferConstants.PAGE_SIZE, Constants.COUNT_DEFAULT+"");
         CommonRequest.getTracks(map, new IDataCallBack<TrackList>() {
             @Override
             public void onSuccess(TrackList trackList) {
                 if(trackList != null){
-                   List<Track> tracks = trackList.getTracks();
-                   handlerAlbumDetailResult(tracks);
+                    List<Track> tracks = trackList.getTracks();
+                    if(isLoaderMore){
+                        mTracks.addAll(tracks);
+                        int size = tracks.size();
+                        handlerLoaderMoreResult(size);
+                    }else{
+                        mTracks.addAll(0,tracks);
+                    }
+                    handlerAlbumDetailResult(mTracks);
                 }
             }
 
             @Override
             public void onError(int errorCode,String errorMsg) {
+                if (isLoaderMore) {
+                    mCurrentPage--;
+                }
                 LogUtil.printI_NORMA("errorCode --> "+errorCode);
                 LogUtil.printI_NORMA("errorMsg --> "+errorMsg);
                 handlerError(errorCode, errorMsg);
             }
         });
+    }
+
+    /**
+     * 处理加载更多的结果
+     *
+     * @param size
+     */
+    private void handlerLoaderMoreResult(int size) {
+        for (IAlbumDetailViewCallback callback : mCallbacks) {
+            callback.onLoaderMoreFinished(size);
+        }
+    }
+
+    @Override
+    public void getAlbumDetail(int albumId, int page) {
+        mTracks.clear();
+        this.mCurrentAlbumId = albumId;
+        this.mCurrentPage = page;
+        doLoaded(false);
     }
 
     private void handlerError(int errorCode, String errorMsg) {

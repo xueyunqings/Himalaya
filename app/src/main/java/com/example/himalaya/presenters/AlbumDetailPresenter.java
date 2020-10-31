@@ -1,5 +1,6 @@
 package com.example.himalaya.presenters;
 
+import com.example.himalaya.api.XimalayaApi;
 import com.example.himalaya.interfaces.IAlbumDetailPresenter;
 import com.example.himalaya.interfaces.IAlbumDetailViewCallback;
 import com.example.himalaya.utils.Constants;
@@ -26,10 +27,10 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
     private int mCurrentAlbumId = -1;
     private int mCurrentPage = 0;
 
-    public static AlbumDetailPresenter getInstance(){
-        if(sInstance == null){
-            synchronized (AlbumDetailPresenter.class){
-                if(sInstance == null) {
+    public static AlbumDetailPresenter getInstance() {
+        if (sInstance == null) {
+            synchronized (AlbumDetailPresenter.class) {
+                if (sInstance == null) {
                     sInstance = new AlbumDetailPresenter();
                 }
             }
@@ -51,38 +52,33 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
     }
 
     private void doLoaded(final boolean isLoaderMore) {
-        //根据页码和id获取列表
-        Map<String,String> map = new HashMap<>();
-        map.put(DTransferConstants.ALBUM_ID,mCurrentAlbumId+"");
-        map.put(DTransferConstants.SORT,"asc");
-        map.put(DTransferConstants.PAGE,mCurrentPage+"");
-        map.put(DTransferConstants.PAGE_SIZE, Constants.COUNT_DEFAULT+"");
-        CommonRequest.getTracks(map, new IDataCallBack<TrackList>() {
+        XimalayaApi xXimalayaApi = XimalayaApi.getXimalayaApi();
+        xXimalayaApi.getAlbumDetail(new IDataCallBack<TrackList>() {
             @Override
             public void onSuccess(TrackList trackList) {
-                if(trackList != null){
+                if (trackList != null) {
                     List<Track> tracks = trackList.getTracks();
-                    if(isLoaderMore){
+                    if (isLoaderMore) {
                         mTracks.addAll(tracks);
                         int size = tracks.size();
                         handlerLoaderMoreResult(size);
-                    }else{
-                        mTracks.addAll(0,tracks);
+                    } else {
+                        mTracks.addAll(0, tracks);
                     }
                     handlerAlbumDetailResult(mTracks);
                 }
             }
 
             @Override
-            public void onError(int errorCode,String errorMsg) {
+            public void onError(int errorCode, String errorMsg) {
                 if (isLoaderMore) {
                     mCurrentPage--;
                 }
-                LogUtil.printI_NORMA("errorCode --> "+errorCode);
-                LogUtil.printI_NORMA("errorMsg --> "+errorMsg);
+                LogUtil.printI_NORMAL("errorCode --> " + errorCode);
+                LogUtil.printI_NORMAL("errorMsg --> " + errorMsg);
                 handlerError(errorCode, errorMsg);
             }
-        });
+        }, mCurrentAlbumId, mCurrentPage);
     }
 
     /**
@@ -105,22 +101,22 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
     }
 
     private void handlerError(int errorCode, String errorMsg) {
-        for(IAlbumDetailViewCallback mCallback : mCallbacks) {
+        for (IAlbumDetailViewCallback mCallback : mCallbacks) {
             mCallback.onNetworkError(errorCode, errorMsg);
         }
     }
 
     private void handlerAlbumDetailResult(List<Track> tracks) {
-        for(IAlbumDetailViewCallback mCallback : mCallbacks) {
+        for (IAlbumDetailViewCallback mCallback : mCallbacks) {
             mCallback.onDetailListLoaded(tracks);
         }
     }
 
     @Override
     public void registerViewCallback(IAlbumDetailViewCallback callback) {
-        if(!mCallbacks.contains(callback)){
+        if (!mCallbacks.contains(callback)) {
             mCallbacks.add(callback);
-            if(mTargetAlbum != null){
+            if (mTargetAlbum != null) {
                 callback.onAlbumLoaded(mTargetAlbum);
             }
         }
@@ -128,7 +124,7 @@ public class AlbumDetailPresenter implements IAlbumDetailPresenter {
 
     @Override
     public void unRegisterViewCallback(IAlbumDetailViewCallback callback) {
-            mCallbacks.remove(callback);
+        mCallbacks.remove(callback);
     }
 
     public void setTargetAlbum(Album targetAlbum) {

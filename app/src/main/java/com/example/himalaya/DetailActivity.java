@@ -243,7 +243,7 @@ public class DetailActivity extends BaseActivity implements IAlbumDetailViewCall
 
                 @Override
                 public void onError() {
-                    LogUtil.printI_NORMA("onError");
+                    LogUtil.printI_NORMAL("onError");
                 }
             });
 

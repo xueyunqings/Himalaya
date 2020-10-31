@@ -11,7 +11,7 @@ public class LogUtil {
         Log.i(TAG_TEST,msg);
     }
 
-    public static void printI_NORMA(String msg){
+    public static void printI_NORMAL(String msg){
         Log.i(TAG_NORMAL,msg);
     }
 

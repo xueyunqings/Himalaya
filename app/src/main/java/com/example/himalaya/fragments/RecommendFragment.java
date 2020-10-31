@@ -18,6 +18,7 @@ import com.example.himalaya.interfaces.IRecommendViewCallback;
 import com.example.himalaya.presenters.AlbumDetailPresenter;
 import com.example.himalaya.presenters.RecommendPresenter;
 import com.example.himalaya.views.UILoader;
+import com.lcodecore.tkrefreshlayout.TwinklingRefreshLayout;
 import com.ximalaya.ting.android.opensdk.model.album.Album;
 
 import net.lucode.hackware.magicindicator.buildins.UIUtil;
@@ -31,6 +32,7 @@ public class RecommendFragment extends BaseFragment implements IRecommendViewCal
     private RecommendListAdapter recommendListAdapter;
     private RecommendPresenter mRecommendPresenter;
     private UILoader uiLoader;
+    TwinklingRefreshLayout twinklingRefreshLayout;
 
     @Override
     protected View onSubviewLoaded(final LayoutInflater layoutInflater, ViewGroup container) {
@@ -64,6 +66,8 @@ public class RecommendFragment extends BaseFragment implements IRecommendViewCal
         //RecyclerViewd的使用
         //1，找到对应给的控件
         recommendRV = mRootView.findViewById(R.id.recommend_list);
+        twinklingRefreshLayout = mRootView.findViewById(R.id.over_scroll_view);
+        twinklingRefreshLayout.setPureScrollModeOn();
         //2，设置布局管理器
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);

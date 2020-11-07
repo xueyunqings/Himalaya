@@ -1,8 +1,9 @@
 package com.example.himalaya.presenters;
 
-import com.example.himalaya.api.XimalayaApi;
+import com.example.himalaya.data.XimalayaApi;
 import com.example.himalaya.interfaces.ISearchCallback;
 import com.example.himalaya.interfaces.ISearchPresenter;
+import com.example.himalaya.utils.Constants;
 import com.example.himalaya.utils.LogUtil;
 import com.ximalaya.ting.android.opensdk.datatrasfer.IDataCallBack;
 import com.ximalaya.ting.android.opensdk.model.album.Album;
@@ -22,6 +23,8 @@ public class SearchPresenter implements ISearchPresenter {
     private XimalayaApi mXimalayaApi = null;
     private static final int DEFAULT_PAGE = 1;
     private int mCurrentPage = 1;
+    private List<Album> mSearchResult = new ArrayList<>();
+    private boolean mIsLoadMore = false;
 
     private SearchPresenter(){
         mXimalayaApi = XimalayaApi.getXimalayaApi();
@@ -43,20 +46,31 @@ public class SearchPresenter implements ISearchPresenter {
 
     @Override
     public void doSearch(String keyWord) {
+        mCurrentPage = DEFAULT_PAGE;
+        mSearchResult.clear();
         //保存keyWord，当网络不好时，用于重新搜索
         this.mCurrentKeyword = keyWord;
-        search();
+        search(keyWord);
     }
 
-    private void search() {
-        mXimalayaApi.searchByKeyword(mCurrentKeyword, mCurrentPage, new IDataCallBack<SearchAlbumList>() {
+    private void search(String keyword) {
+        mXimalayaApi.searchByKeyword(keyword, mCurrentPage, new IDataCallBack<SearchAlbumList>() {
             @Override
             public void onSuccess(SearchAlbumList searchAlbumList) {
                 List<Album> albums = searchAlbumList.getAlbums();
+                mSearchResult.addAll(albums);
                 if (albums != null) {
-                    for (ISearchCallback iSearchCallback : mCallbackList) {
-                        iSearchCallback.onSearchResultLoaded(albums);
+                    if(mIsLoadMore) {
+                        for (ISearchCallback iSearchCallback : mCallbackList) {
+                            iSearchCallback.onLoadMoreResult(mSearchResult,albums.size()!=0);
+                        }
+                        mIsLoadMore = false;
+                    } else {
+                        for (ISearchCallback iSearchCallback : mCallbackList) {
+                            iSearchCallback.onSearchResultLoaded(mSearchResult);
+                        }
                     }
+
                 }
             }
 
@@ -64,7 +78,13 @@ public class SearchPresenter implements ISearchPresenter {
             public void onError(int errorCode, String errorMsg) {
                 LogUtil.printI_NORMAL("search --> errorCode:"+errorCode+" , errorMsg:"+errorMsg);
                 for (ISearchCallback iSearchCallback : mCallbackList) {
-                    iSearchCallback.onError(errorCode,errorMsg);
+                    if (mIsLoadMore) {
+                        iSearchCallback.onLoadMoreResult(mSearchResult, false);
+                        mCurrentPage--;
+                        mIsLoadMore = false;
+                    } else {
+                        iSearchCallback.onError(errorCode, errorMsg);
+                    }
                 }
             }
         });
@@ -72,12 +92,21 @@ public class SearchPresenter implements ISearchPresenter {
 
     @Override
     public void reSearch() {
-        search();
+        search(mCurrentKeyword);
     }
 
     @Override
     public void loadMore() {
-
+        //判断有没有必要进行加载更多
+        if (mSearchResult.size() < Constants.COUNT_DEFAULT) {
+            for (ISearchCallback iSearchCallback : mCallbackList) {
+                iSearchCallback.onLoadMoreResult(mSearchResult, false);
+            }
+        } else {
+            mIsLoadMore = true;
+            mCurrentPage++;
+            search(mCurrentKeyword);
+        }
     }
 
     @Override
